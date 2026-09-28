@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>DentalPro</title>
+<meta name="theme-color" content="#0ea5e9"/>
+<meta name="description" content="Sistema de gestión dental"/>
+<link rel="manifest" href="/manifest.json"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f9ff;--surface:#fff;--primary:#0ea5e9;--primary-dark:#0284c7;
+  --text:#0f172a;--text2:#64748b;--border:#e2e8f0;--danger:#ef4444;
+  --success:#22c55e;--warning:#f59e0b;--radius:12px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+
+/* Sidebar */
+#sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px 0;position:fixed;top:0;left:0;height:100vh;z-index:10}
+#sidebar .logo{padding:8px 20px 24px;font-size:20px;font-weight:700;color:var(--primary)}
+#sidebar nav a{display:flex;align-items:center;gap:10px;padding:12px 20px;color:var(--text2);text-decoration:none;font-size:14px;border-radius:0;transition:.15s}
+#sidebar nav a:hover,#sidebar nav a.active{background:var(--bg);color:var(--primary);font-weight:600}
+#sidebar nav a span.icon{font-size:18px}
+
+/* Main */
+#main{margin-left:220px;flex:1;padding:24px;max-width:100%}
+.page{display:none}.page.active{display:block}
+h1{font-size:22px;font-weight:700;margin-bottom:16px}
+h2{font-size:16px;font-weight:600;margin-bottom:12px}
+
+/* Cards / Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:.15s}
+.card:hover{border-color:var(--primary);box-shadow:0 2px 8px #0ea5e920}
+.card h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.card p{font-size:13px;color:var(--text2)}
+
+/* Toolbar */
+.toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.toolbar input{flex:1;min-width:160px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none}
+.toolbar input:focus{border-color:var(--primary)}
+button{padding:9px 16px;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:500;transition:.15s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+
+/* Table */
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;padding:10px 14px;background:var(--bg);font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+td{padding:10px 14px;border-top:1px solid var(--border)}
+tr:hover td{background:#f8fafc}
+
+/* Badge */
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.badge-ok{background:#dcfce7;color:#166534}
+.badge-warn{background:#fef9c3;color:#854d0e}
+.badge-info{background:#dbeafe;color:#1e40af}
+.badge-danger{background:#fee2e2;color:#991b1b}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:#00000070;z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:24px}
+.modal h2{margin-bottom:16px}
+.modal .close{float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);margin-top:-4px}
+form .field{margin-bottom:12px}
+form label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text2)}
+form input,form select,form textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none}
+form input:focus,form select:focus,form textarea:focus{border-color:var(--primary)}
+form textarea{resize:vertical;min-height:80px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+
+/* Odontogram */
+#odonto-grid{display:grid;grid-template-columns:repeat(16,1fr);gap:3px;max-width:640px;margin:0 auto 8px}
+.tooth{width:100%;aspect-ratio:1;border:2px solid var(--border);border-radius:4px;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:.1s;background:var(--surface)}
+.tooth:hover{border-color:var(--primary)}
+.tooth.sano{background:#fff}
+.tooth.caries{background:#fde68a;border-color:var(--warning)}
+.tooth.obturacion{background:#bfdbfe;border-color:#3b82f6}
+.tooth.extraccion{background:#fecaca;border-color:var(--danger)}
+.tooth.corona{background:#d1fae5;border-color:var(--success)}
+.tooth.ausente{background:#f1f5f9;border-color:#cbd5e1;opacity:.5}
+.tooth-num{font-size:8px;color:var(--text2);line-height:1}
+.tooth-dot{width:8px;height:8px;border-radius:50%;background:currentColor;margin-top:1px}
+.odonto-legend{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 16px;font-size:12px}
+.odonto-legend span{display:flex;align-items:center;gap:4px}
+.leg-box{width:12px;height:12px;border-radius:3px;border:1px solid #ccc}
+
+/* Toast */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:999;opacity:0;transition:.3s;pointer-events:none}
+#toast.show{opacity:1}
+
+/* Offline */
+#offline-bar{display:none;position:fixed;top:0;left:0;right:0;background:var(--warning);color:#fff;text-align:center;padding:6px;font-size:13px;z-index:999}
+
+/* Loading */
+#loading{position:fixed;inset:0;background:#fff8;z-index:200;display:none;align-items:center;justify-content:center}
+#loading.show{display:flex}
+.spinner{width:36px;height:36px;border:4px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Bottom nav mobile */
+#bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:10}
+#bottom-nav a{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px;font-size:10px;color:var(--text2);text-decoration:none;gap:2px}
+#bottom-nav a.active{color:var(--primary);font-weight:600}
+#bottom-nav a .icon{font-size:20px}
+
+/* Patient detail panel */
+#patient-panel{display:none}
+#patient-panel.open{display:block}
+.back-btn{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;color:var(--text2);font-size:14px;margin-bottom:16px;padding:0}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px}
+.tab-btn{padding:8px 16px;border:none;background:none;cursor:pointer;font-size:14px;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.tab-pane{display:none}.tab-pane.active{display:block}
+
+@media(max-width:768px){
+  #sidebar{display:none}
+  #main{margin-left:0;padding:16px;padding-bottom:70px}
+  #bottom-nav{display:flex}
+  #toast{bottom:72px}
+}
+</style>
+</head>
+<body>
+<div id="offline-bar">📡 Sin conexión — los cambios no se guardarán</div>
+<div id="loading"><div class="spinner"></div></div>
+<div id="toast"></div>
+
+<!-- Sidebar desktop -->
+<div id="sidebar">
+  <div class="logo">🦷 DentalPro</div>
+  <nav id="sidebar-nav">
+    <a href="#" class="active" data-page="patients"><span class="icon">👥</span>Pacientes</a>
+    <a href="#" data-page="appointments"><span class="icon">📅</span>Citas</a>
+    <a href="#" data-page="dashboard"><span class="icon">📊</span>Resumen</a>
+  </nav>
+</div>
+
+<!-- Bottom nav mobile -->
+<nav id="bottom-nav">
+  <a href="#" class="active" data-page="patients"><span class="icon">👥</span>Pacientes</a>
+  <a href="#" data-page="appointments"><span class="icon">📅</span>Citas</a>
+  <a href="#" data-page="dashboard"><span class="icon">📊</span>Resumen</a>
+</nav>
+
+<div id="main">
+  <!-- PATIENTS LIST -->
+  <div id="page-patients" class="page active">
+    <div id="patients-list-view">
+      <h1>Pacientes</h1>
+      <div class="toolbar">
+        <input id="patient-search" type="search" placeholder="Buscar paciente…"/>
+        <button class="btn-primary" onclick="openPatientModal()">+ Nuevo</button>
+      </div>
+      <div id="patients-grid" class="grid"></div>
+    </div>
+    <div id="patient-panel">
+      <button class="back-btn" onclick="closePatientPanel()">← Volver</button>
+      <h1 id="panel-name"></h1>
+      <p id="panel-info" style="color:var(--text2);font-size:13px;margin-bottom:16px"></p>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn-outline btn-sm" onclick="editCurrentPatient()">✏️ Editar</button>
+        <button class="btn-danger btn-sm" onclick="deleteCurrentPatient()">🗑 Eliminar</button>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="consults">Consultas</button>
+        <button class="tab-btn" data-tab="treatments">Tratamientos</button>
+        <button class="tab-btn" data-tab="odontogram">Odontograma</button>
+      </div>
+      <div id="tab-consults" class="tab-pane active">
+        <div class="toolbar"><button class="btn-primary" onclick="openConsultModal()">+ Agregar consulta</button></div>
+        <div id="consults-list"></div>
+      </div>
+      <div id="tab-treatments" class="tab-pane">
+        <div class="toolbar"><button class="btn-primary" onclick="openTreatmentModal()">+ Agregar tratamiento</button></div>
+        <div class="tbl-wrap"><table id="treatments-table"><thead><tr><th>Tratamiento</th><th>Diente</th><th>Estado</th><th>Costo</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div id="tab-odontogram" class="tab-pane">
+        <div class="odonto-legend">
+          <span><div class="leg-box" style="background:#fff"></div>Sano</span>
+          <span><div class="leg-box" style="background:#fde68a"></div>Caries</span>
+          <span><div class="leg-box" style="background:#bfdbfe"></div>Obturado</span>
+          <span><div class="leg-box" style="background:#fecaca"></div>Extracción</span>
+          <span><div class="leg-box" style="background:#d1fae5"></div>Corona</span>
+          <span><div class="leg-box" style="background:#f1f5f9"></div>Ausente</span>
+        </div>
+        <div id="odonto-grid"></div>
+        <p style="font-size:12px;color:var(--text2);text-align:center">Haz clic en un diente para cambiar su estado</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPOINTMENTS -->
+  <div id="page-appointments" class="page">
+    <h1>Citas</h1>
+    <div class="toolbar">
+      <input type="date" id="appt-date-filter" onchange="loadAppointments()"/>
+      <button class="btn-outline" onclick="document.getElementById('appt-date-filter').value='';loadAppointments()">Todas</button>
+      <button class="btn-primary" onclick="openApptModal()">+ Nueva cita</button>
+    </div>
+    <div class="tbl-wrap">
+      <table id="appt-table">
+        <thead><tr><th>Fecha</th><th>Hora</th><th>Paciente</th><th>Motivo</th><th>Estado</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="page-dashboard" class="page">
+    <h1>Resumen</h1>
+    <div class="grid" id="dash-cards"></div>
+    <h2>Próximas citas (hoy)</h2>
+    <div id="dash-appts"></div>
+  </div>
+</div>
+
+<!-- MODAL: Patient -->
+<div class="modal-bg" id="modal-patient">
+  <div class="modal">
+    <button class="close" onclick="closeModal('modal-patient')">✕</button>
+    <h2 id="modal-patient-title">Nuevo paciente</h2>
+    <form id="form-patient" onsubmit="savePatient(event)">
+      <div class="field"><label>Nombre completo*</label><input name="full_name" required/></div>
+      <div class="field"><label>Fecha de nacimiento</label><input name="birth_date" type="date"/></div>
+      <div class="field"><label>Teléfono</label><input name="phone" type="tel"/></div>
+      <div class="field"><label>Email</label><input name="email" type="email"/></div>
+      <div class="field"><label>Dirección</label><input name="address"/></div>
+      <div class="field"><label>Notas</label><textarea name="notes"></textarea></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-outline" onclick="closeModal('modal-patient')">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: Consult -->
+<div class="modal-bg" id="modal-consult">
+  <div class="modal">
+    <button class="close" onclick="closeModal('modal-consult')">✕</button>
+    <h2>Nueva consulta</h2>
+    <form id="form-consult" onsubmit="saveConsult(event)">
+      <div class="field"><label>Fecha</label><input name="consult_date" type="date" required/></div>
+      <div class="field"><label>Motivo / Queja principal</label><textarea name="chief_complaint"></textarea></div>
+      <div class="field"><label>Diagnóstico</label><textarea name="diagnosis"></textarea></div>
+      <div class="field"><label>Notas clínicas</label><textarea name="notes"></textarea></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-outline" onclick="closeModal('modal-consult')">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: Treatment -->
+<div class="modal-bg" id="modal-treatment">
+  <div class="modal">
+    <button class="close" onclick="closeModal('modal-treatment')">✕</button>
+    <h2>Nuevo tratamiento</h2>
+    <form id="form-treatment" onsubmit="saveTreatment(event)">
+      <div class="field"><label>Descripción*</label><input name="description" required/></div>
+      <div class="field"><label>Diente (FDI)</label><input name="tooth_number" placeholder="ej. 11, 36"/></div>
+      <div class="field"><label>Estado</label>
+        <select name="status">
+          <option value="pendiente">Pendiente</option>
+          <option value="en_proceso">En proceso</option>
+          <option value="completado">Completado</option>
+        </select>
+      </div>
+      <div class="field"><label>Costo ($)</label><input name="cost" type="number" min="0" step="0.01" value="0"/></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-outline" onclick="closeModal('modal-treatment')">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: Appointment -->
+<div class="modal-bg" id="modal-appt">
+  <div class="modal">
+    <button class="close" onclick="closeModal('modal-appt')">✕</button>
+    <h2>Nueva cita</h2>
+    <form id="form-appt" onsubmit="saveAppt(event)">
+      <div class="field"><label>Paciente*</label>
+        <select name="patient_id" id="appt-patient-select" required></select>
+      </div>
+      <div class="field"><label>Fecha*</label><input name="appointment_date" type="date" required/></div>
+      <div class="field"><label>Hora*</label><input name="appointment_time" type="time" required/></div>
+      <div class="field"><label>Motivo</label><input name="reason"/></div>
+      <div class="field"><label>Estado</label>
+        <select name="status">
+          <option value="programada">Programada</option>
+          <option value="confirmada">Confirmada</option>
+          <option value="completada">Completada</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-outline" onclick="closeModal('modal-appt')">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: Tooth -->
+<div class="modal-bg" id="modal-tooth">
+  <div class="modal" style="max-width:320px">
+    <button class="close" onclick="closeModal('modal-tooth')">✕</button>
+    <h2 id="tooth-modal-title">Diente</h2>
+    <div class="field"><label>Estado</label>
+      <select id="tooth-status-sel">
+        <option value="sano">Sano</option>
+        <option value="caries">Caries</option>
+        <option value="obturacion">Obturado</option>
+        <option value="extraccion">Extracción indicada</option>
+        <option value="corona">Corona</option>
+        <option value="ausente">Ausente</option>
+      </select>
+    </div>
+    <div class="field"><label>Notas</label><textarea id="tooth-notes-inp" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeModal('modal-tooth')">Cancelar</button>
+      <button class="btn-primary" onclick="saveTooth()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let currentPatient = null;
+let currentToothNum = null;
+let editingPatientId = null;
+let allPatients = [];
+
+// ---- Utilities ----
+const $ = id => document.getElementById(id);
+const show = id => { $(id).style.display = 'flex'; }
+const hide = id => { $(id).style.display = 'none'; }
+
+function toast(msg, ms = 2500) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+function loading(on) {
+  on ? $('loading').classList.add('show') : $('loading').classList.remove('show');
+}
+
+async function api(path, method = 'GET', body = null, params = {}) {
+  const url = new URL(API + path, location.href);
+  Object.entries(params).forEach(([k,v]) => v !== undefined && url.searchParams.set(k, v));
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'Error');
+  return data;
+}
+
+function openModal(id) { $(id).classList.add('open'); }
+function closeModal(id) { $(id).classList.remove('open'); }
+
+// ---- Navigation ----
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('[data-page]').forEach(a => a.classList.remove('active'));
+  $('page-' + page).classList.add('active');
+  document.querySelectorAll('[data-page="' + page + '"]').forEach(a => a.classList.add('active'));
+  if (page === 'patients') loadPatients();
+  if (page === 'appointments') loadAppointments();
+  if (page === 'dashboard') loadDashboard();
+}
+
+document.querySelectorAll('[data-page]').forEach(a => {
+  a.addEventListener('click', e => { e.preventDefault(); navigate(a.dataset.page); });
+});
+
+// ---- PATIENTS ----
+async function loadPatients(search = '') {
+  loading(true);
+  try {
+    allPatients = await api('/patients', 'GET', null, search ? { search } : {});
+    renderPatients(allPatients);
+  } catch(e) { toast('Error cargando pacientes'); }
+  loading(false);
+}
+
+function renderPatients(list) {
+  const g = $('patients-grid');
+  if (!list.length) { g.innerHTML = '<p style="color:var(--text2);padding:8px">No hay pacientes registrados.</p>'; return; }
+  g.innerHTML = list.map(p => `
+    <div class="card" onclick="openPatientPanel('${p.id}')">
+      <h3>${p.full_name}</h3>
+      <p>${p.phone || ''} ${p.email ? '· '+p.email : ''}</p>
+      ${p.birth_date ? '<p style="font-size:12px;margin-top:4px">Nac: '+p.birth_date+'</p>' : ''}
+    </div>`).join('');
+}
+
+$('patient-search').addEventListener('input', e => loadPatients(e.target.value));
+
+function openPatientModal(patient = null) {
+  editingPatientId = patient ? patient.id : null;
+  const form = $('form-patient');
+  form.reset();
+  $('modal-patient-title').textContent = patient ? 'Editar paciente' : 'Nuevo paciente';
+  if (patient) {
+    ['full_name','birth_date','phone','email','address','notes'].forEach(f => {
+      if (form[f] && patient[f]) form[f].value = patient[f];
+    });
+  }
+  openModal('modal-patient');
+}
+
+async function savePatient(e) {
+  e.preventDefault();
+  const form = $('form-patient');
+  const fd = new FormData(form);
+  const body = {};
+  fd.forEach((v,k) => { if(v) body[k] = v; });
+  loading(true);
+  try {
+    if (editingPatientId) {
+      body.id = editingPatientId;
+      await api('/patients', 'PUT', body);
+      toast('Paciente actualizado ✓');
+    } else {
+      await api('/patients', 'POST', body);
+      toast('Paciente registrado ✓');
+    }
+    closeModal('modal-patient');
+    await loadPatients();
+    if (editingPatientId && currentPatient) {
+      // refresh panel
+      const updated = allPatients.find(p => p.id === editingPatientId);
+      if (updated) openPatientPanel(updated.id);
+    }
+  } catch(err) { toast('Error: ' + err.message); }
+  loading(false);
+}
+
+async function openPatientPanel(id) {
+  const patient = allPatients.find(p => p.id === id) || await api('/patients').then(r => r.find(p => p.id === id));
+  currentPatient = patient;
+  $('panel-name').textContent = patient.full_name;
+  $('panel-info').textContent = [patient.phone, patient.email, patient.birth_date ? 'Nac: '+patient.birth_date : ''].filter(Boolean).join(' · ');
+  $('patients-list-view').style.display = 'none';
+  $('patient-panel').classList.add('open');
+  activateTab('consults');
+  loadConsults();
+}
+
+function closePatientPanel() {
+  currentPatient = null;
+  $('patient-panel').classList.remove('open');
+  $('patients-list-view').style.display = 'block';
+}
+
+function editCurrentPatient() { openPatientModal(currentPatient); }
+
+async function deleteCurrentPatient() {
+  if (!confirm('¿Eliminar a ' + currentPatient.full_name + '? Se borrarán todas sus consultas y tratamientos.')) return;
+  loading(true);
+  try {
+    await api('/patients', 'DELETE', null, { id: currentPatient.id });
+    toast('Paciente eliminado');
+    closePatientPanel();
+    loadPatients();
+  } catch(e) { toast('Error'); }
+  loading(false);
+}
+
+// ---- TABS ----
+function activateTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+  if (name === 'consults') loadConsults();
+  if (name === 'treatments') loadTreatments();
+  if (name === 'odontogram') loadOdontogram();
+}
+
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => activateTab(b.dataset.tab));
+});
+
+// ---- CONSULTS ----
+async function loadConsults() {
+  if (!currentPatient) return;
+  const rows = await api('/consults', 'GET', null, { patient_id: currentPatient.id });
+  const el = $('consults-list');
+  if (!rows.length) { el.innerHTML = '<p style="color:var(--text2);padding:8px">Sin consultas registradas.</p>'; return; }
+  el.innerHTML = rows.map(r => `
+    <div class="card" style="margin-bottom:10px;cursor:default">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <strong>${r.consult_date}</strong>
+        <button class="btn-danger btn-sm" onclick="deleteConsult('${r.id}')">🗑</button>
+      </div>
+      ${r.chief_complaint ? '<p style="margin-top:6px"><b>Motivo:</b> '+r.chief_complaint+'</p>' : ''}
+      ${r.diagnosis ? '<p><b>Dx:</b> '+r.diagnosis+'</p>' : ''}
+      ${r.notes ? '<p><b>Notas:</b> '+r.notes+'</p>' : ''}
+    </div>`).join('');
+}
+
+function openConsultModal() {
+  $('form-consult').reset();
+  $('form-consult').consult_date.value = new Date().toISOString().slice(0,10);
+  openModal('modal-consult');
+}
+
+async function saveConsult(e) {
+  e.preventDefault();
+  const fd = new FormData($('form-consult'));
+  const body = { patient_id: currentPatient.id };
+  fd.forEach((v,k) => { if(v) body[k] = v; });
+  loading(true);
+  try {
+    await api('/consults', 'POST', body);
+    toast('Consulta guardada ✓');
+    closeModal('modal-consult');
+    loadConsults();
+  } catch(e) { toast('Error'); }
+  loading(false);
+}
+
+async function deleteConsult(id) {
+  if (!confirm('¿Eliminar consulta?')) return;
+  await api('/consults', 'DELETE', null, { id });
+  loadConsults();
+}
+
+// ---- TREATMENTS ----
+async function loadTreatments() {
+  if (!currentPatient) return;
+  const rows = await api('/treatments', 'GET', null, { patient_id: currentPatient.id });
+  const tbody = document.querySelector('#treatments-table tbody');
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.description}</td>
+      <td>${r.tooth_number || '-'}</td>
+      <td><span class="badge ${r.status==='completado'?'badge-ok':r.status==='en_proceso'?'badge-info':'badge-warn'}">${r.status}</span></td>
+      <td>$${parseFloat(r.cost||0).toFixed(2)}</td>
+      <td>
+        <select style="padding:4px;border-radius:6px;border:1px solid var(--border);font-size:12px" onchange="updateTreatmentStatus('${r.id}',this.value)">
+          <option ${r.status==='pendiente'?'selected':''}>pendiente</option>
+          <option value="en_proceso" ${r.status==='en_proceso'?'selected':''}>en_proceso</option>
+          <option value="completado" ${r.status==='completado'?'selected':''}>completado</option>
+        </select>
+        <button class="btn-danger btn-sm" style="margin-left:4px" onclick="deleteTreatment('${r.id}')">🗑</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--text2);padding:16px">Sin tratamientos.</td></tr>';
+}
+
+function openTreatmentModal() {
+  $('form-treatment').reset();
+  openModal('modal-treatment');
+}
+
+async function saveTreatment(e) {
+  e.preventDefault();
+  const fd = new FormData($('form-treatment'));
+  const body = { patient_id: currentPatient.id };
+  fd.forEach((v,k) => { if(v) body[k] = v; });
+  loading(true);
+  try {
+    await api('/treatments', 'POST', body);
+    toast('Tratamiento guardado ✓');
+    closeModal('modal-treatment');
+    loadTreatments();
+  } catch(e) { toast('Error'); }
+  loading(false);
+}
+
+async function updateTreatmentStatus(id, status) {
+  await api('/treatments', 'PUT', { id, status });
+  toast('Estado actualizado ✓');
+}
+
+async function deleteTreatment(id) {
+  if (!confirm('¿Eliminar tratamiento?')) return;
+  await api('/treatments', 'DELETE', null, { id });
+  loadTreatments();
+}
+
+// ---- ODONTOGRAM ----
+const FDI_UPPER = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+const FDI_LOWER = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+let toothData = {};
+
+async function loadOdontogram() {
+  if (!currentPatient) return;
+  const rows = await api('/odontogram', 'GET', null, { patient_id: currentPatient.id });
+  toothData = {};
+  rows.forEach(r => toothData[r.tooth_number] = r);
+  renderOdontogram();
+}
+
+function renderOdontogram() {
+  const grid = $('odonto-grid');
+  const statusIcons = { sano:'', caries:'🟡', obturacion:'🔵', extraccion:'🔴', corona:'🟢', ausente:'⬜' };
+  const all = [...FDI_UPPER, ...FDI_LOWER];
+  grid.innerHTML = all.map(n => {
+    const d = toothData[n] || { status: 'sano' };
+    return `<div class="tooth ${d.status}" title="${n}: ${d.status}" onclick="openToothModal(${n})">
+      <span class="tooth-num">${n}</span>
+    </div>`;
+  }).join('');
+}
+
+function openToothModal(num) {
+  currentToothNum = num;
+  $('tooth-modal-title').textContent = 'Diente ' + num;
+  const d = toothData[num] || {};
+  $('tooth-status-sel').value = d.status || 'sano';
+  $('tooth-notes-inp').value = d.notes || '';
+  openModal('modal-tooth');
+}
+
+async function saveTooth() {
+  const body = {
+    patient_id: currentPatient.id,
+    tooth_number: currentToothNum,
+    status: $('tooth-status-sel').value,
+    notes: $('tooth-notes-inp').value
+  };
+  loading(true);
+  try {
+    await api('/odontogram', 'POST', body);
+    toast('Diente actualizado ✓');
+    closeModal('modal-tooth');
+    loadOdontogram();
+  } catch(e) { toast('Error'); }
+  loading(false);
+}
+
+// ---- APPOINTMENTS ----
+async function loadAppointments() {
+  loading(true);
+  const date = $('appt-date-filter').value;
+  try {
+    const rows = await api('/appointments', 'GET', null, date ? { date } : {});
+    const tbody = document.querySelector('#appt-table tbody');
+    // populate patient select too
+    if (!allPatients.length) allPatients = await api('/patients');
+    const statusBadge = { programada:'badge-info', confirmada:'badge-ok', completada:'badge-ok', cancelada:'badge-danger' };
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td>${r.appointment_date}</td>
+        <td>${r.appointment_time?.slice(0,5)}</td>
+        <td>${r.patients?.full_name || '-'}</td>
+        <td>${r.reason || '-'}</td>
+        <td><span class="badge ${statusBadge[r.status]||'badge-warn'}">${r.status}</span></td>
+        <td><button class="btn-danger btn-sm" onclick="deleteAppt('${r.id}')">🗑</button></td>
+      </tr>`).join('') || '<tr><td colspan="6" style="color:var(--text2);padding:16px">No hay citas.</td></tr>';
+  } catch(e) { toast('Error cargando citas'); }
+  loading(false);
+}
+
+async function openApptModal() {
+  if (!allPatients.length) allPatients = await api('/patients');
+  const sel = $('appt-patient-select');
+  sel.innerHTML = '<option value="">Selecciona paciente…</option>' +
+    allPatients.map(p => `<option value="${p.id}">${p.full_name}</option>`).join('');
+  $('form-appt').reset();
+  $('form-appt').appointment_date.value = new Date().toISOString().slice(0,10);
+  openModal('modal-appt');
+}
+
+async function saveAppt(e) {
+  e.preventDefault();
+  const fd = new FormData($('form-appt'));
+  const body = {};
+  fd.forEach((v,k) => { if(v) body[k] = v; });
+  loading(true);
+  try {
+    await api('/appointments', 'POST', body);
+    toast('Cita creada ✓');
+    closeModal('modal-appt');
+    loadAppointments();
+  } catch(e) { toast('Error'); }
+  loading(false);
+}
+
+async function deleteAppt(id) {
+  if (!confirm('¿Cancelar cita?')) return;
+  await api('/appointments', 'DELETE', null, { id });
+  toast('Cita eliminada');
+  loadAppointments();
+}
+
+// ---- DASHBOARD ----
+async function loadDashboard() {
+  loading(true);
+  try {
+    const [patients, appointments, treatments] = await Promise.all([
+      api('/patients'),
+      api('/appointments'),
+      api('/treatments')
+    ]);
+    const today = new Date().toISOString().slice(0,10);
+    const todayAppts = appointments.filter(a => a.appointment_date === today);
+    const pending = treatments.filter(t => t.status === 'pendiente');
+    $('dash-cards').innerHTML = [
+      { label:'Pacientes', val: patients.length, icon:'👥' },
+      { label:'Citas hoy', val: todayAppts.length, icon:'📅' },
+      { label:'Tratamientos pendientes', val: pending.length, icon:'⚙️' },
+      { label:'Total citas', val: appointments.length, icon:'📊' },
+    ].map(d => `<div class="card" style="cursor:default">
+      <div style="font-size:32px;margin-bottom:8px">${d.icon}</div>
+      <div style="font-size:28px;font-weight:700;color:var(--primary)">${d.val}</div>
+      <p>${d.label}</p>
+    </div>`).join('');
+    $('dash-appts').innerHTML = todayAppts.length
+      ? todayAppts.map(a => `<div class="card" style="cursor:default;margin-bottom:8px">
+          <strong>${a.appointment_time?.slice(0,5)} — ${a.patients?.full_name||'Paciente'}</strong>
+          <p>${a.reason||''}</p>
+        </div>`).join('')
+      : '<p style="color:var(--text2)">No hay citas para hoy.</p>';
+  } catch(e) { toast('Error cargando resumen'); }
+  loading(false);
+}
+
+// ---- Offline ----
+window.addEventListener('offline', () => { $('offline-bar').style.display = 'block'; });
+window.addEventListener('online',  () => { $('offline-bar').style.display = 'none'; });
+
+// ---- Init ----
+loadPatients();
+
+// Register SW for PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
